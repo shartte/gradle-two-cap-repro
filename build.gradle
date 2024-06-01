@@ -1,0 +1,50 @@
+
+// This is to simulate how we use this in the real plugin, where the version is a Property<String>
+def neoForgeVersion = provider { "20.6.91-beta-pr-959-features-gradle-metadata" }
+
+var neoFormRuntimeArtifacts = configurations.create("neoFormRuntimeArtifacts", spec -> {
+    spec.setDescription("This configuration is used to collect all dependencies and tools needed to create Minecraft artifacts, which are all passed on to the NeoForm Runtime in form of an Artifact manifest.");
+    spec.setCanBeConsumed(false);
+    spec.setCanBeResolved(true);
+    spec.withDependencies(dependencies -> {
+        dependencies.addAllLater(neoForgeVersion.map(version -> {
+            var neoForgeArtifactId = "net.neoforged:neoforge:" + version;
+            return List.of(
+                    // This is the NeoForge patches + configuration file for patching Minecraft
+                    dependencyFactory.create(neoForgeArtifactId)
+                            .capabilities(caps -> caps.requireCapability("net.neoforged:neoforge-moddev-bundle")),
+                    dependencyFactory.create(neoForgeArtifactId)
+                            .capabilities(caps -> caps.requireCapability("net.neoforged:neoforge-dependencies")),
+            );
+        }));
+    });
+});
+
+tasks.register('testConsumer', JavaExec) {
+    classpath = neoFormRuntimeArtifacts
+    mainClass = file("Test.java").absolutePath
+}
+
+repositories {
+    maven {
+        url = "https://prmaven.neoforged.net/NeoForge/pr959"
+        content {
+            includeModule("net.neoforged", "neoforge")
+        }
+    }
+    maven {
+        url = "https://prmaven.neoforged.net/NeoForm/pr10"
+        content {
+            includeModule("net.neoforged", "neoform")
+        }
+    }
+    maven {
+        url = "https://prmaven.neoforged.net/GradleMinecraftDependencies/pr1"
+        content {
+            includeModule("net.neoforged", "minecraft-dependencies")
+        }
+    }
+    maven {
+        url = "https://maven.neoforged.net/releases/"
+    }
+}
