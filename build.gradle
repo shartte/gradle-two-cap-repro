@@ -1,4 +1,3 @@
-
 // This is to simulate how we use this in the real plugin, where the version is a Property<String>
 def neoForgeVersion = provider { "20.6.91-beta-pr-959-features-gradle-metadata" }
 
@@ -6,11 +5,14 @@ var neoFormRuntimeArtifacts = configurations.create("neoFormRuntimeArtifacts", s
     spec.setDescription("This configuration is used to collect all dependencies and tools needed to create Minecraft artifacts, which are all passed on to the NeoForm Runtime in form of an Artifact manifest.");
     spec.setCanBeConsumed(false);
     spec.setCanBeResolved(true);
+    spec.attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.class, Usage.JAVA_API))
+        attributes.attribute(Attribute.of("net.neoforged.distribution", String.class), "client")
+    }
     spec.withDependencies(dependencies -> {
         dependencies.addAllLater(neoForgeVersion.map(version -> {
             var neoForgeArtifactId = "net.neoforged:neoforge:" + version;
             return List.of(
-                    // This is the NeoForge patches + configuration file for patching Minecraft
                     dependencyFactory.create(neoForgeArtifactId)
                             .capabilities(caps -> caps.requireCapability("net.neoforged:neoforge-moddev-bundle")),
                     dependencyFactory.create(neoForgeArtifactId)
@@ -26,6 +28,12 @@ tasks.register('testConsumer', JavaExec) {
 }
 
 repositories {
+    maven {
+        url = "https://libraries.minecraft.net"
+        metadataSources {
+            mavenPom()
+        }
+    }
     maven {
         url = "https://prmaven.neoforged.net/NeoForge/pr959"
         content {
